@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sahi POS — Staff Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#E8131B;--blue:#1565C0;--blueh:#1976D2;--bluelight:#E3F0FF;
+  --yellow:#FFC107;--green:#16a34a;--orange:#f97316;--purple:#7c3aed;
+  --bg:#0f172a;--card:#1e293b;--border:#334155;
+  --txt:#f1f5f9;--sub:#94a3b8;
+  --new:#ef4444;--kitchen:#f97316;--ready:#22c55e;--done:#64748b;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* TOP BAR */
+.topbar{background:#0f172a;border-bottom:2px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.tb-logo{font-size:26px}
+.tb-title{font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;color:var(--txt)}
+.tb-sub{font-size:11px;color:var(--sub);font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.tb-time{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;color:var(--yellow)}
+.tb-status{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#4ade80}
+.tb-dot{width:7px;height:7px;background:#4ade80;border-radius:50%;animation:blink 1.8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.refresh-btn{background:var(--border);border:none;border-radius:8px;padding:7px 12px;color:var(--txt);font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;cursor:pointer;transition:background .15s}
+.refresh-btn:hover{background:#475569}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 14px 0}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:13px 14px}
+.stat-val{font-family:'Baloo 2',sans-serif;font-size:24px;font-weight:800;line-height:1}
+.stat-lbl{font-size:11px;color:var(--sub);font-weight:700;margin-top:3px}
+.stat-new .stat-val{color:var(--new)}
+.stat-kitchen .stat-val{color:var(--kitchen)}
+.stat-ready .stat-val{color:var(--ready)}
+.stat-sales .stat-val{color:var(--yellow)}
+
+/* TABS */
+.tabs{display:flex;gap:0;padding:14px 14px 0;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 18px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;border:none;background:var(--card);color:var(--sub);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .18s;display:flex;align-items:center;gap:6px}
+.tab.on{color:var(--txt);border-bottom-color:var(--blue)}
+.tab-badge{background:var(--new);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:800}
+.tab-badge.orange{background:var(--orange)}
+.tab-badge.green{background:var(--green)}
+
+/* ORDER GRID */
+.orders-wrap{padding:12px 14px 24px}
+.orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.empty-state{text-align:center;padding:60px 20px;color:var(--sub)}
+.empty-state .es-icon{font-size:56px;margin-bottom:10px}
+.empty-state .es-txt{font-family:'Baloo 2',sans-serif;font-size:17px;font-weight:800}
+
+/* ORDER CARD */
+.oc{background:var(--card);border-radius:16px;border:2px solid var(--border);overflow:hidden;transition:border-color .2s}
+.oc.status-new{border-color:rgba(239,68,68,.5)}
+.oc.status-kitchen{border-color:rgba(249,115,22,.5)}
+.oc.status-ready{border-color:rgba(34,197,94,.5)}
+.oc.status-done{opacity:.6}
+.oc-head{padding:11px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid var(--border)}
+.oc-num{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800}
+.oc-badge{border-radius:8px;padding:3px 10px;font-family:'Baloo 2',sans-serif;font-size:11px;font-weight:800;color:#fff}
+.badge-new{background:var(--new)}
+.badge-kitchen{background:var(--kitchen)}
+.badge-ready{background:var(--ready)}
+.badge-done{background:var(--done)}
+.oc-meta{padding:10px 14px;border-bottom:1.5px solid var(--border)}
+.oc-customer{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;margin-bottom:3px}
+.oc-type{font-size:11.5px;color:var(--sub);font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.oc-type-tag{background:var(--bg);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800}
+.oc-type-tag.dine{color:#a78bfa}
+.oc-type-tag.pickup{color:var(--yellow)}
+.oc-type-tag.delivery{color:#38bdf8}
+.oc-time{font-size:10.5px;color:var(--sub);font-weight:600;margin-top:2px}
+.oc-items{padding:10px 14px;border-bottom:1.5px solid var(--border)}
+.oc-item{display:flex;align-items:center;gap:7px;padding:3px 0;font-size:12.5px;font-weight:700}
+.oc-item-qty{background:var(--blue);color:#fff;border-radius:5px;padding:1px 6px;font-family:'Baloo 2',sans-serif;font-size:11px;font-weight:800;flex-shrink:0}
+.oc-item-name{flex:1;color:var(--txt)}
+.oc-item-sz{font-size:10px;color:var(--sub)}
+.oc-note{background:rgba(249,115,22,.1);border-left:3px solid var(--orange);padding:6px 10px;margin:8px 14px 0;border-radius:0 8px 8px 0;font-size:12px;font-weight:700;color:#fbbf24}
+.oc-foot{padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.oc-total{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;color:var(--yellow)}
+.oc-actions{display:flex;gap:7px}
+.oc-btn{border:none;border-radius:9px;padding:8px 14px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:12px;cursor:pointer;transition:transform .12s,opacity .15s;white-space:nowrap}
+.oc-btn:active{transform:scale(.93)}
+.oc-btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-accept{background:var(--green);color:#fff}
+.btn-ready{background:var(--ready);color:#fff}
+.btn-done{background:var(--done);color:#fff}
+.btn-print{background:var(--blue);color:#fff}
+.btn-cancel{background:transparent;border:1.5px solid var(--border);color:var(--sub)}
+
+/* MANUAL ORDER */
+.manual-wrap{padding:0 14px 24px}
+.manual-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:16px}
+.manual-title{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;margin-bottom:14px;color:var(--txt)}
+.mf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media(max-width:500px){.mf-row{grid-template-columns:1fr}}
+.mf-label{font-family:'Baloo 2',sans-serif;font-size:12px;font-weight:800;color:var(--sub);margin-bottom:5px;display:block}
+.mf-input{width:100%;background:#0f172a;border:2px solid var(--border);border-radius:9px;padding:10px 12px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--txt);outline:none;transition:border-color .18s}
+.mf-input:focus{border-color:var(--blue)}
+.mf-input::placeholder{color:#475569}
+.mf-select{width:100%;background:#0f172a;border:2px solid var(--border);border-radius:9px;padding:10px 12px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--txt);outline:none;cursor:pointer}
+/* Item adder */
+.item-adder{border:1.5px dashed var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
+.item-adder-title{font-family:'Baloo 2',sans-serif;font-size:12px;font-weight:800;color:var(--sub);margin-bottom:9px}
+.ia-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.ia-cat{background:#0f172a;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--txt);outline:none;cursor:pointer;flex:1;min-width:90px}
+.ia-item{background:#0f172a;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--txt);outline:none;cursor:pointer;flex:2;min-width:120px}
+.ia-size{background:#0f172a;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--txt);outline:none;cursor:pointer;flex:1;min-width:80px}
+.ia-qty{background:#0f172a;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--txt);width:60px;outline:none;text-align:center}
+.ia-add{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 13px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap}
+.ia-add:active{transform:scale(.93)}
+.manual-items{margin-bottom:12px}
+.mi-item{display:flex;align-items:center;gap:8px;padding:7px 9px;background:#0f172a;border-radius:8px;margin-bottom:6px}
+.mi-name{flex:1;font-size:12.5px;font-weight:700;color:var(--txt)}
+.mi-price{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--yellow)}
+.mi-del{background:none;border:none;cursor:pointer;color:var(--new);font-size:16px;padding:2px 5px}
+.manual-total{background:#0f172a;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.mt-lbl{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--sub)}
+.mt-val{font-family:'Baloo 2',sans-serif;font-size:20px;font-weight:800;color:var(--yellow)}
+.place-btn{width:100%;background:var(--green);color:#fff;border:none;border-radius:11px;padding:13px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;cursor:pointer;transition:background .15s}
+.place-btn:active{background:#15803d}
+.place-btn:disabled{background:#475569;cursor:not-allowed}
+
+/* SALES TAB */
+.sales-wrap{padding:12px 14px 24px}
+.sales-header{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;color:var(--txt);margin-bottom:12px}
+.sales-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:14px}
+.sales-card{background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:14px}
+.sc-lbl{font-size:11px;color:var(--sub);font-weight:700;margin-bottom:4px}
+.sc-val{font-family:'Baloo 2',sans-serif;font-size:26px;font-weight:800}
+.sc-val.yellow{color:var(--yellow)}
+.sc-val.green{color:var(--green)}
+.sc-val.blue{color:#38bdf8}
+.sc-val.red{color:var(--new)}
+.orders-table{width:100%;border-collapse:collapse}
+.orders-table th{background:var(--border);padding:9px 11px;text-align:left;font-family:'Baloo 2',sans-serif;font-size:12px;font-weight:800;color:var(--sub)}
+.orders-table td{padding:9px 11px;border-bottom:1px solid var(--border);font-size:12.5px;font-weight:700}
+.orders-table tr:last-child td{border-bottom:none}
+.orders-table tr:hover td{background:rgba(255,255,255,.03)}
+
+/* PRINT STYLES */
+@media print {
+  body{background:#fff;color:#000}
+  .no-print{display:none!important}
+  .receipt{display:block!important}
+}
+.receipt{display:none;padding:10px;font-family:'Courier New',monospace;font-size:12px;color:#000}
+.receipt-title{text-align:center;font-size:16px;font-weight:800;margin-bottom:4px}
+.receipt-line{border-top:1px dashed #000;margin:6px 0}
+
+/* TOAST */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:9px 19px;border-radius:28px;font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;animation:tin .3s ease;border:1.5px solid var(--border)}
+@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.toast.green{background:var(--green);border-color:var(--green)}
+.toast.red{background:var(--new);border-color:var(--new)}
+
+/* SOUND indicator */
+.sound-btn{background:var(--border);border:none;border-radius:8px;padding:7px 12px;color:var(--txt);font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;cursor:pointer}
+.sound-btn.on{background:var(--green);color:#fff}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar no-print">
+  <div class="topbar-left">
+    <div class="tb-logo">🍕</div>
+    <div>
+      <div class="tb-title">Sahi POS</div>
+      <div class="tb-sub">Staff Dashboard</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="tb-status"><div class="tb-dot"></div><span>Live</span></div>
+    <div class="tb-time" id="clockDisplay">--:--</div>
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔔 Sound ON</button>
+    <button class="refresh-btn" onclick="loadOrders()">🔄 Refresh</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats no-print" id="statsBar">
+  <div class="stat stat-new"><div class="stat-val" id="s-new">0</div><div class="stat-lbl">🔴 New Orders</div></div>
+  <div class="stat stat-kitchen"><div class="stat-val" id="s-kitchen">0</div><div class="stat-lbl">🟡 In Kitchen</div></div>
+  <div class="stat stat-ready"><div class="stat-val" id="s-ready">0</div><div class="stat-lbl">🟢 Ready</div></div>
+  <div class="stat stat-sales"><div class="stat-val" id="s-sales">0</div><div class="stat-lbl">💰 Today Sales (Rs.)</div></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs no-print">
+  <button class="tab on" onclick="switchTab('new')" id="tab-new">🔴 New <span class="tab-badge" id="badge-new">0</span></button>
+  <button class="tab" onclick="switchTab('kitchen')" id="tab-kitchen">🟡 Kitchen <span class="tab-badge orange" id="badge-kitchen">0</span></button>
+  <button class="tab" onclick="switchTab('ready')" id="tab-ready">🟢 Ready <span class="tab-badge green" id="badge-ready">0</span></button>
+  <button class="tab" onclick="switchTab('done')" id="tab-done">✅ Done</button>
+  <button class="tab" onclick="switchTab('manual')" id="tab-manual">➕ New Order</button>
+  <button class="tab" onclick="switchTab('sales')" id="tab-sales">📊 Sales</button>
+</div>
+
+<!-- ORDERS SECTION -->
+<div class="orders-wrap no-print" id="ordersSection">
+  <div class="orders-grid" id="ordersGrid">
+    <div class="empty-state"><div class="es-icon">⏳</div><div class="es-txt">Loading orders...</div></div>
+  </div>
+</div>
+
+<!-- MANUAL ORDER SECTION -->
+<div class="manual-wrap no-print" id="manualSection" style="display:none">
+  <div class="manual-card">
+    <div class="manual-title">➕ Manual Order — Walk-in / Phone</div>
+    <div class="mf-row">
+      <div>
+        <label class="mf-label">👤 Customer Name</label>
+        <input class="mf-input" id="m-name" type="text" placeholder="Name (optional)">
+      </div>
+      <div>
+        <label class="mf-label">📱 Phone</label>
+        <input class="mf-input" id="m-phone" type="tel" placeholder="03XX-XXXXXXX (optional)">
+      </div>
+    </div>
+    <div class="mf-row">
+      <div>
+        <label class="mf-label">📦 Order Type</label>
+        <select class="mf-select" id="m-type" onchange="onTypeChange()">
+          <option value="dine">🍽️ Dine In</option>
+          <option value="pickup" selected>🚶 Pickup / Takeaway</option>
+          <option value="delivery">🏠 Delivery</option>
+        </select>
+      </div>
+      <div id="m-table-wrap">
+        <label class="mf-label">🪑 Table # (Dine In)</label>
+        <input class="mf-input" id="m-table" type="number" placeholder="Table number" style="display:none">
+        <input class="mf-input" id="m-addr" type="text" placeholder="Delivery address" style="display:none">
+        <div id="m-placeholder" style="font-size:12px;color:var(--sub);padding-top:14px">Pickup — no extra info needed</div>
+      </div>
+    </div>
+
+    <!-- Item Adder -->
+    <div class="item-adder">
+      <div class="item-adder-title">🛒 Add Items</div>
+      <div class="ia-row">
+        <select class="ia-cat" id="ia-cat" onchange="onCatChange()">
+          <option value="">Category...</option>
+          <option value="deals">🔥 Deals</option>
+          <option value="pizzas">🍕 Pizza</option>
+          <option value="burgers">🍔 Burgers</option>
+          <option value="shawarma">🌯 Shawarma</option>
+          <option value="wraps">🫓 Wraps</option>
+          <option value="starters">🍟 Starters</option>
+          <option value="biryani">🍛 Biryani</option>
+          <option value="sahi">⭐ Sahi Special</option>
+          <option value="salads">🥗 Pasta & Salads</option>
+          <option value="shakes">🥤 Shakes</option>
+        </select>
+        <select class="ia-item" id="ia-item" onchange="onItemChange()">
+          <option value="">Select item...</option>
+        </select>
+        <select class="ia-size" id="ia-size" style="display:none">
+          <option value="">Size...</option>
+        </select>
+        <input class="ia-qty" id="ia-qty" type="number" value="1" min="1" max="99">
+        <button class="ia-add" onclick="addManualItem()">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Items List -->
+    <div class="manual-items" id="manualItemsList"></div>
+
+    <!-- Note -->
+    <div style="margin-bottom:12px">
+      <label class="mf-label">📝 Note / Special Instructions</label>
+      <input class="mf-input" id="m-note" type="text" placeholder="Any special request...">
+    </div>
+
+    <!-- Total -->
+    <div class="manual-total">
+      <div class="mt-lbl">Total Amount</div>
+      <div class="mt-val" id="m-total">Rs. 0</div>
+    </div>
+
+    <button class="place-btn" id="placeManualBtn" onclick="placeManualOrder()">✅ Place Order</button>
+  </div>
+</div>
+
+<!-- SALES SECTION -->
+<div class="sales-wrap no-print" id="salesSection" style="display:none">
+  <div class="sales-header">📊 Today's Sales Report — آج کی رپورٹ</div>
+  <div class="sales-grid" id="salesGrid">
+    <div class="sales-card"><div class="sc-lbl">Total Sales Today</div><div class="sc-val yellow" id="ss-total">Rs. 0</div></div>
+    <div class="sales-card"><div class="sc-lbl">Orders Completed</div><div class="sc-val green" id="ss-done">0</div></div>
+    <div class="sales-card"><div class="sc-lbl">Dine In Orders</div><div class="sc-val blue" id="ss-dine">0</div></div>
+    <div class="sales-card"><div class="sc-lbl">Delivery Orders</div><div class="sc-val red" id="ss-del">0</div></div>
+  </div>
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:13px;overflow:hidden">
+    <div style="padding:12px 14px;border-bottom:1.5px solid var(--border);font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800">Recent Orders</div>
+    <div style="overflow-x:auto">
+      <table class="orders-table" id="salesTable">
+        <thead><tr><th>#</th><th>Customer</th><th>Type</th><th>Items</th><th>Total</th><th>Status</th><th>Time</th></tr></thead>
+        <tbody id="salesBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT (hidden, shown on print) -->
+<div class="receipt" id="receiptEl"></div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+const SUPABASE_URL = 'https://pqrwjswpxssjfxnzrpfj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxcndqc3dweHNzamZ4bnpycGZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTQwMDMsImV4cCI6MjA4OTQzMDAwM30.a4L0JD3gWd76CW89OSa5-t2U55Cjq5I5UAr6W7GWXOQ';
+
+let allOrders = [];
+let activeTab = 'new';
+let soundEnabled = true;
+let lastOrderIds = new Set();
+let autoRefreshTimer = null;
+
+// ══════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clockDisplay').textContent =
+    now.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit',hour12:true});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ══════════════════════════════════════
+// SOUND
+// ══════════════════════════════════════
+function toggleSound(){
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('soundBtn');
+  btn.textContent = soundEnabled ? '🔔 Sound ON' : '🔕 Sound OFF';
+  btn.classList.toggle('on', soundEnabled);
+}
+
+function playAlert(){
+  if(!soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523, 659, 784].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + i*0.15);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i*0.15 + 0.3);
+      osc.start(ctx.currentTime + i*0.15);
+      osc.stop(ctx.currentTime + i*0.15 + 0.3);
+    });
+  } catch(e){}
+}
+
+// ══════════════════════════════════════
+// SUPABASE HELPERS
+// ══════════════════════════════════════
+async function dbFetch(path, opts={}){
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...opts.headers
+    },
+    method: opts.method || 'GET',
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  if(!res.ok){ const e=await res.text(); throw new Error(e); }
+  return res.json();
+}
+
+async function updateOrderStatus(id, status){
+  await dbFetch('orders?id=eq.'+id, {
+    method: 'PATCH',
+    body: { status },
+    prefer: 'return=minimal'
+  });
+}
+
+// ══════════════════════════════════════
+// LOAD & RENDER ORDERS
+// ══════════════════════════════════════
+async function loadOrders(){
+  try {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const data = await dbFetch('orders?created_at=gte.'+today.toISOString()+'&order=created_at.desc');
+    
+    // Detect new orders
+    const newIds = new Set(data.filter(o=>o.status==='new').map(o=>o.id));
+    const brandNew = [...newIds].filter(id => !lastOrderIds.has(id));
+    if(brandNew.length > 0 && lastOrderIds.size > 0) {
+      playAlert();
+      toast('🔔 '+brandNew.length+' new order(s)!', 'green');
+    }
+    lastOrderIds = newIds;
+    
+    allOrders = data;
+    renderStats();
+    renderOrders();
+    renderSales();
+  } catch(e){
+    console.error(e);
+    toast('Connection error. Retrying...', 'red');
+  }
+}
+
+function renderStats(){
+  const newC = allOrders.filter(o=>o.status==='new').length;
+  const kitC = allOrders.filter(o=>o.status==='kitchen').length;
+  const readyC = allOrders.filter(o=>o.status==='ready').length;
+  const totalSales = allOrders.filter(o=>o.status==='done').reduce((s,o)=>s+o.total,0);
+  
+  document.getElementById('s-new').textContent = newC;
+  document.getElementById('s-kitchen').textContent = kitC;
+  document.getElementById('s-ready').textContent = readyC;
+  document.getElementById('s-sales').textContent = totalSales.toLocaleString();
+  
+  document.getElementById('badge-new').textContent = newC;
+  document.getElementById('badge-kitchen').textContent = kitC;
+  document.getElementById('badge-ready').textContent = readyC;
+}
+
+function renderOrders(){
+  if(activeTab === 'manual' || activeTab === 'sales') return;
+  const grid = document.getElementById('ordersGrid');
+  const filtered = allOrders.filter(o => o.status === activeTab);
+  
+  if(!filtered.length){
+    grid.innerHTML = '<div class="empty-state"><div class="es-icon">'
+      + (activeTab==='new'?'🎉':activeTab==='kitchen'?'👨‍🍳':activeTab==='ready'?'✅':'📋')
+      + '</div><div class="es-txt">'
+      + (activeTab==='new'?'No new orders right now':'No orders in this stage')
+      + '</div></div>';
+    return;
+  }
+  
+  grid.innerHTML = filtered.map(orderCard).join('');
+}
+
+function orderCard(o){
+  const items = Array.isArray(o.items) ? o.items : [];
+  const timeAgo = getTimeAgo(o.created_at);
+  const typeLabel = o.order_type==='delivery'?'🏠 Delivery':o.order_type==='dine'?'🍽️ Dine In':'🚶 Pickup';
+  const typeClass = o.order_type;
+  
+  let actions = '';
+  if(o.status === 'new'){
+    actions = '<button class="oc-btn btn-accept" onclick="changeStatus('+o.id+',\'kitchen\')">🍳 Send to Kitchen</button>';
+  } else if(o.status === 'kitchen'){
+    actions = '<button class="oc-btn btn-ready" onclick="changeStatus('+o.id+',\'ready\')">✅ Mark Ready</button>';
+  } else if(o.status === 'ready'){
+    actions = '<button class="oc-btn btn-done" onclick="changeStatus('+o.id+',\'done\')">🏁 Mark Done</button>';
+  }
+  
+  const itemsHtml = items.map(i =>
+    '<div class="oc-item">'
+    +'<span class="oc-item-qty">'+i.qty+'x</span>'
+    +'<span class="oc-item-name">'+(i.emoji||'')+'  '+i.name+(i.size?' <span class="oc-item-sz">('+i.size+')</span>':'')+'</span>'
+    +'<span style="font-size:11.5px;color:var(--yellow);font-weight:700">Rs.'+(i.price*i.qty)+'</span>'
+    +'</div>'
+  ).join('');
+  
+  const noteHtml = o.note ? '<div class="oc-note">📝 '+o.note+'</div>' : '';
+  
+  const addrHtml = o.order_type==='delivery'&&o.address
+    ? '<div style="font-size:11px;color:#38bdf8;font-weight:700;margin-top:2px">📍 '+o.address+'</div>' : '';
+  const tableHtml = o.order_type==='dine'&&o.table_no
+    ? '<div style="font-size:11px;color:#a78bfa;font-weight:700;margin-top:2px">🪑 Table #'+o.table_no+'</div>' : '';
+  
+  const badgeClass = 'badge-'+o.status;
+  const badgeText = o.status==='new'?'🔴 NEW':o.status==='kitchen'?'🟡 KITCHEN':o.status==='ready'?'🟢 READY':'✅ DONE';
+  
+  return '<div class="oc status-'+o.status+'">'
+    +'<div class="oc-head">'
+    +'<div class="oc-num">#'+o.id+'</div>'
+    +'<div class="oc-badge '+badgeClass+'">'+badgeText+'</div>'
+    +'</div>'
+    +'<div class="oc-meta">'
+    +'<div class="oc-customer">'+o.customer_name+' · '+o.customer_phone+'</div>'
+    +'<div class="oc-type"><span class="oc-type-tag '+typeClass+'">'+typeLabel+'</span></div>'
+    +addrHtml+tableHtml
+    +'<div class="oc-time">⏰ '+timeAgo+'</div>'
+    +'</div>'
+    +'<div class="oc-items">'+itemsHtml+'</div>'
+    +noteHtml
+    +'<div class="oc-foot">'
+    +'<div class="oc-total">Rs. '+o.total+'</div>'
+    +'<div class="oc-actions">'
+    +'<button class="oc-btn btn-print" onclick="printReceipt('+o.id+')">🖨️</button>'
+    +actions
+    +'</div>'
+    +'</div>'
+    +'</div>';
+}
+
+async function changeStatus(id, newStatus){
+  try {
+    await updateOrderStatus(id, newStatus);
+    toast(newStatus==='kitchen'?'✅ Sent to kitchen!':newStatus==='ready'?'🟢 Marked ready!':'🏁 Order done!', 'green');
+    await loadOrders();
+  } catch(e){
+    toast('Error updating order', 'red');
+  }
+}
+
+function getTimeAgo(dateStr){
+  const diff = (new Date() - new Date(dateStr)) / 1000;
+  if(diff < 60) return Math.floor(diff)+'s ago';
+  if(diff < 3600) return Math.floor(diff/60)+'m ago';
+  return Math.floor(diff/3600)+'h ago';
+}
+
+// ══════════════════════════════════════
+// PRINT RECEIPT
+// ══════════════════════════════════════
+function printReceipt(id){
+  const o = allOrders.find(x => x.id === id);
+  if(!o) return;
+  const items = Array.isArray(o.items) ? o.items : [];
+  const typeLabel = o.order_type==='delivery'?'Home Delivery':o.order_type==='dine'?'Dine In':'Pickup/Takeaway';
+  
+  let html = '<div class="receipt-title">🍕 SAHI PIZZA CABIN POINT</div>'
+    +'<div style="text-align:center;font-size:11px">Near Zabi Ullah Sahi Filter, Jesarwala</div>'
+    +'<div style="text-align:center;font-size:11px">052-6300085 / 0305-4266621</div>'
+    +'<div class="receipt-line"></div>'
+    +'<div>Order #'+o.id+' | '+typeLabel+'</div>'
+    +'<div>Customer: '+o.customer_name+'</div>'
+    +'<div>Phone: '+o.customer_phone+'</div>'
+    +(o.table_no?'<div>Table: #'+o.table_no+'</div>':'')
+    +(o.address?'<div>Address: '+o.address+'</div>':'')
+    +'<div>Time: '+new Date(o.created_at).toLocaleString('en-PK')+'</div>'
+    +'<div class="receipt-line"></div>'
+    +'<div><b>ITEMS:</b></div>';
+  
+  items.forEach(i => {
+    html += '<div>'+i.qty+'x '+i.name+(i.size?' ('+i.size+')':'')
+      +'<span style="float:right">Rs.'+(i.price*i.qty)+'</span></div>';
+  });
+  
+  html += '<div class="receipt-line"></div>'
+    +'<div>Subtotal<span style="float:right">Rs.'+o.subtotal+'</span></div>'
+    +(o.discount>0?'<div>Discount<span style="float:right">- Rs.'+o.discount+'</span></div>':'')
+    +(o.delivery_fee>0?'<div>Delivery Fee<span style="float:right">Rs.'+o.delivery_fee+'</span></div>':'')
+    +'<div class="receipt-line"></div>'
+    +'<div><b>TOTAL<span style="float:right">Rs.'+o.total+'</span></b></div>'
+    +(o.note?'<div class="receipt-line"></div><div>Note: '+o.note+'</div>':'')
+    +'<div class="receipt-line"></div>'
+    +'<div style="text-align:center">Thank you! شکریہ 🍕</div>'
+    +'<div style="text-align:center;font-size:10px">Taste jo Dil Jeet le</div>';
+  
+  document.getElementById('receiptEl').innerHTML = html;
+  window.print();
+}
+
+// ══════════════════════════════════════
+// SALES
+// ══════════════════════════════════════
+function renderSales(){
+  const done = allOrders.filter(o => o.status === 'done');
+  const total = done.reduce((s,o) => s+o.total, 0);
+  const dine = allOrders.filter(o=>o.order_type==='dine').length;
+  const del = allOrders.filter(o=>o.order_type==='delivery').length;
+  
+  document.getElementById('ss-total').textContent = 'Rs. '+total.toLocaleString();
+  document.getElementById('ss-done').textContent = done.length;
+  document.getElementById('ss-dine').textContent = dine;
+  document.getElementById('ss-del').textContent = del;
+  
+  const tbody = document.getElementById('salesBody');
+  if(!allOrders.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:20px">No orders today yet</td></tr>';return;}
+  
+  tbody.innerHTML = allOrders.map(o => {
+    const items = Array.isArray(o.items)?o.items:[];
+    const statusColor = o.status==='new'?'var(--new)':o.status==='kitchen'?'var(--orange)':o.status==='ready'?'var(--green)':'var(--sub)';
+    return '<tr>'
+      +'<td style="font-family:\'Baloo 2\',sans-serif;font-weight:800">#'+o.id+'</td>'
+      +'<td>'+o.customer_name+'</td>'
+      +'<td>'+(o.order_type==='delivery'?'🏠':o.order_type==='dine'?'🍽️':'🚶')+'</td>'
+      +'<td>'+items.map(i=>i.qty+'x '+i.name).join(', ')+'</td>'
+      +'<td style="font-family:\'Baloo 2\',sans-serif;color:var(--yellow)">Rs.'+o.total+'</td>'
+      +'<td style="color:'+statusColor+';font-weight:800">'+o.status.toUpperCase()+'</td>'
+      +'<td>'+new Date(o.created_at).toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit',hour12:true})+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// TABS
+// ══════════════════════════════════════
+function switchTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('tab-'+tab).classList.add('on');
+  document.getElementById('ordersSection').style.display = (tab==='manual'||tab==='sales') ? 'none' : 'block';
+  document.getElementById('manualSection').style.display = tab==='manual' ? 'block' : 'none';
+  document.getElementById('salesSection').style.display = tab==='sales' ? 'block' : 'none';
+  renderOrders();
+}
+
+// ══════════════════════════════════════
+// MENU DATA (same as customer app)
+// ══════════════════════════════════════
+const MENU = {
+  deals:[
+    {id:'d1',name:'Deal 1',price:500,e:'🍔'},
+    {id:'d2',name:'Deal 2',price:1200,e:'🍕'},
+    {id:'d3',name:'Deal 3',price:2200,e:'🍕'},
+    {id:'d4',name:'Deal 4',price:2600,e:'🍕'},
+    {id:'d5',name:'Deal 5',price:1500,e:'🍔'},
+    {id:'d6',name:'Deal 6',price:1600,e:'🌯'},
+    {id:'d7',name:'Deal 7',price:3000,e:'🎉'},
+  ],
+  pizzas:[
+    {id:'p-tikka',name:'Tikka Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🍕'},
+    {id:'p-fajita',name:'Fajita Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🍕'},
+    {id:'p-supreme',name:'Supreme Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🍕'},
+    {id:'p-achari',name:'Achari Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🍕'},
+    {id:'p-bbq',name:'BBQ Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🍕'},
+    {id:'p-pepperoni',name:'Pepperoni Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🍕'},
+    {id:'p-hotspicy',name:'Hot & Spicy Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🌶️'},
+    {id:'p-mex',name:'Chicken Mexican Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🍕'},
+    {id:'p-cheeslvr',name:'Cheese Lover Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🧀'},
+    {id:'p-veggie',name:'Vegetable Pizza',sizes:[{s:'Small',p:500},{s:'Medium',p:899},{s:'Large',p:1299},{s:'X-Large',p:1650}],e:'🥦'},
+    {id:'sp-malaiboti',name:'Malai Boti Pizza',sizes:[{s:'Small',p:800},{s:'Medium',p:1100},{s:'Large',p:1500},{s:'X-Large',p:1800}],e:'🍕'},
+    {id:'sp-kebab',name:'Kebab Pizza',sizes:[{s:'Small',p:800},{s:'Medium',p:1100},{s:'Large',p:1500},{s:'X-Large',p:1800}],e:'🍢'},
+    {id:'sp-crown',name:'Crown Crust Pizza',sizes:[{s:'Small',p:800},{s:'Medium',p:1100},{s:'Large',p:1500},{s:'X-Large',p:1800}],e:'👑'},
+    {id:'sp-donner',name:'Special Donner Pizza',sizes:[{s:'Medium',p:1300},{s:'Large',p:1700},{s:'X-Large',p:2000}],e:'🍕'},
+    {id:'sp-sahi',name:'Sahi Special Pizza',sizes:[{s:'Medium',p:1150},{s:'Large',p:1600},{s:'X-Large',p:1900}],e:'⭐'},
+  ],
+  burgers:[
+    {id:'b-zinger',name:'Zinger Burger',price:300,e:'🍔'},
+    {id:'b-zingerc',name:'Zinger Cheese Burger',price:400,e:'🧀'},
+    {id:'b-chkpet',name:'Chicken Petty Burger',price:300,e:'🍔'},
+    {id:'b-chkpetc',name:'Chicken Petty Cheese Burger',price:350,e:'🧀'},
+    {id:'b-ddecker',name:'Double Decker Burger',price:550,e:'🍔'},
+    {id:'b-pizzabgr',name:'Pizza Burger',price:500,e:'🍕'},
+    {id:'b-shami',name:'Shami Burger',price:150,e:'🍔'},
+    {id:'b-chicken',name:'Chicken Burger',price:250,e:'🍔'},
+  ],
+  shawarma:[
+    {id:'sw-chkn',name:'Chicken Shawarma',price:200,e:'🌯'},
+    {id:'sw-2chkn',name:'2 Chicken Shawarma',price:300,e:'🌯'},
+    {id:'sw-tsm',name:'Turkish Small Shawarma',price:250,e:'🌯'},
+    {id:'sw-tlg',name:'Turkish Large Shawarma',price:300,e:'🌯'},
+    {id:'sw-plat',name:'Plater Shawarma',price:450,e:'🌯'},
+  ],
+  wraps:[
+    {id:'w-spar',name:'Special Paratha',price:350,e:'🫓'},
+    {id:'w-chpar',name:'Chicken Paratha',price:250,e:'🫓'},
+    {id:'w-zpar',name:'Zinger Paratha',price:300,e:'🫓'},
+    {id:'w-ppar',name:'Pizza Paratha',price:550,e:'🫓'},
+    {id:'w-swrap',name:'Special Wrap',price:450,e:'🌮'},
+    {id:'w-tort',name:'Tortilla Wrap',price:350,e:'🌮'},
+    {id:'w-zwrap',name:'Zinger Wrap',price:350,e:'🌮'},
+    {id:'w-grill',name:'Grill Wrap',price:400,e:'🌮'},
+  ],
+  starters:[
+    {id:'st-frm',name:'Fries (Small)',price:180,e:'🍟'},
+    {id:'st-frl',name:'Fries (Large)',price:250,e:'🍟'},
+    {id:'st-lf',name:'Loaded Fries with Cheese',price:450,e:'🧀'},
+    {id:'st-hw5',name:'Hot Wings (5 Pcs)',price:300,e:'🍗'},
+    {id:'st-hw10',name:'Hot Wings (10 Pcs)',price:550,e:'🍗'},
+    {id:'st-bw8',name:'Oven Baked Wings (8 Pcs)',price:450,e:'🍗'},
+    {id:'st-hgw6',name:'Honey Glaze Wings (6 Pcs)',price:400,e:'🍯'},
+    {id:'st-ng5',name:'Nuggets (5 Pcs)',price:250,e:'🍗'},
+    {id:'st-ng10',name:'Nuggets (10 Pcs)',price:400,e:'🍗'},
+    {id:'st-chs',name:'Cheese Sticks',price:550,e:'🧀'},
+    {id:'st-pkp',name:'Pocket Pizza',price:500,e:'🍕'},
+    {id:'st-sms',name:'Samosa',price:50,e:'🥟'},
+    {id:'st-kch',name:'Kachori',price:110,e:'🥙'},
+  ],
+  biryani:[
+    {id:'bry-h',name:'Chicken Biryani Half',price:200,e:'🍛'},
+    {id:'bry-f',name:'Chicken Biryani Full',price:350,e:'🍛'},
+    {id:'bry-r',name:'Raita',price:50,e:'🥛'},
+    {id:'bry-s',name:'Salad',price:40,e:'🥗'},
+  ],
+  sahi:[
+    {id:'s-mi',name:'Milano Chicken',price:450,e:'🍗'},
+    {id:'s-po',name:'Pollo Chicken',price:400,e:'🍗'},
+    {id:'s-br',name:'Special Breast',price:300,e:'🍗'},
+    {id:'s-st',name:'Stuff Chicken',price:550,e:'🍗'},
+    {id:'s-ml',name:'Montan Lawa Cake',price:500,e:'🎂'},
+    {id:'s-pc',name:'Chicken 1 Piece',price:240,e:'🍗'},
+  ],
+  salads:[
+    {id:'sl-ru',name:'Russian Salad',price:200,e:'🥗'},
+    {id:'sl-sa',name:'Salanti Salad',price:200,e:'🥗'},
+    {id:'sl-mc',name:'Macaroni Salad',price:200,e:'🥗'},
+    {id:'sl-al',name:'Alfredo Pasta',price:350,e:'🍝'},
+    {id:'sl-lz',name:'Lazania Pasta',price:600,e:'🍝'},
+    {id:'sl-cp',name:'Cheese Pasta',price:350,e:'🧀'},
+  ],
+  shakes:[
+    {id:'sh-ch',name:'Chocolate Shake',price:650,e:'🍫'},
+    {id:'sh-va',name:'Vanilla Shake',price:550,e:'🍦'},
+    {id:'sh-or',name:'Oreo Shake',price:700,e:'🍪'},
+    {id:'sh-li',name:'Fresh Lime',price:200,e:'🍋'},
+    {id:'sh-mm',name:'Mint Margarita',price:250,e:'🌿'},
+  ],
+};
+
+// ══════════════════════════════════════
+// MANUAL ORDER
+// ══════════════════════════════════════
+let manualItems = [];
+
+function onTypeChange(){
+  const t = document.getElementById('m-type').value;
+  document.getElementById('m-table').style.display = t==='dine'?'block':'none';
+  document.getElementById('m-addr').style.display = t==='delivery'?'block':'none';
+  document.getElementById('m-placeholder').style.display = t==='pickup'?'block':'none';
+}
+
+function onCatChange(){
+  const cat = document.getElementById('ia-cat').value;
+  const sel = document.getElementById('ia-item');
+  sel.innerHTML = '<option value="">Select item...</option>';
+  document.getElementById('ia-size').style.display = 'none';
+  if(!cat) return;
+  (MENU[cat]||[]).forEach(it => {
+    const opt = document.createElement('option');
+    opt.value = it.id+'|'+cat;
+    opt.textContent = (it.e||'')+'  '+it.name+(it.price?' — Rs.'+it.price:'');
+    sel.appendChild(opt);
+  });
+}
+
+function onItemChange(){
+  const val = document.getElementById('ia-item').value;
+  const szSel = document.getElementById('ia-size');
+  szSel.innerHTML = '<option value="">Size...</option>';
+  szSel.style.display = 'none';
+  if(!val) return;
+  const [id, cat] = val.split('|');
+  const item = (MENU[cat]||[]).find(i=>i.id===id);
+  if(!item) return;
+  if(item.sizes && item.sizes.length){
+    szSel.style.display = 'block';
+    item.sizes.forEach(sz => {
+      const opt = document.createElement('option');
+      opt.value = sz.s+'|'+sz.p;
+      opt.textContent = sz.s+' — Rs.'+sz.p;
+      szSel.appendChild(opt);
+    });
+    szSel.value = item.sizes[0].s+'|'+item.sizes[0].p;
+  }
+}
+
+function addManualItem(){
+  const val = document.getElementById('ia-item').value;
+  if(!val){ toast('Select an item first', 'red'); return; }
+  const [id, cat] = val.split('|');
+  const item = (MENU[cat]||[]).find(i=>i.id===id);
+  if(!item) return;
+  const qty = Math.max(1, parseInt(document.getElementById('ia-qty').value)||1);
+  let price = item.price;
+  let size = null;
+  if(item.sizes){
+    const szVal = document.getElementById('ia-size').value;
+    if(szVal){ const parts=szVal.split('|'); size=parts[0]; price=parseInt(parts[1]); }
+    else { size=item.sizes[0].s; price=item.sizes[0].p; }
+  }
+  manualItems.push({id:item.id,name:item.name,emoji:item.e||'🍕',price,qty,size});
+  renderManualItems();
+  document.getElementById('ia-item').value = '';
+  document.getElementById('ia-cat').value = '';
+  document.getElementById('ia-size').style.display = 'none';
+  document.getElementById('ia-qty').value = 1;
+}
+
+function removeManualItem(idx){
+  manualItems.splice(idx,1);
+  renderManualItems();
+}
+
+function renderManualItems(){
+  const el = document.getElementById('manualItemsList');
+  if(!manualItems.length){ el.innerHTML=''; document.getElementById('m-total').textContent='Rs. 0'; return; }
+  el.innerHTML = manualItems.map((i,idx) =>
+    '<div class="mi-item">'
+    +'<span style="font-size:18px">'+i.emoji+'</span>'
+    +'<span class="mi-name">'+i.qty+'x '+i.name+(i.size?' ('+i.size+')':'')+'</span>'
+    +'<span class="mi-price">Rs.'+(i.price*i.qty)+'</span>'
+    +'<button class="mi-del" onclick="removeManualItem('+idx+')">🗑️</button>'
+    +'</div>'
+  ).join('');
+  const total = manualItems.reduce((s,i) => s+i.price*i.qty, 0);
+  document.getElementById('m-total').textContent = 'Rs. '+total;
+}
+
+async function placeManualOrder(){
+  if(!manualItems.length){ toast('Add at least one item!', 'red'); return; }
+  const name = document.getElementById('m-name').value.trim() || 'Walk-in';
+  const phone = document.getElementById('m-phone').value.trim() || '—';
+  const type = document.getElementById('m-type').value;
+  const table = document.getElementById('m-table').value.trim() || null;
+  const addr = document.getElementById('m-addr').value.trim() || null;
+  const note = document.getElementById('m-note').value.trim() || null;
+  const total = manualItems.reduce((s,i) => s+i.price*i.qty, 0);
+  
+  const btn = document.getElementById('placeManualBtn');
+  btn.disabled = true; btn.textContent = '⏳ Placing...';
+  
+  try {
+    const saved = await dbFetch('orders', {
+      method: 'POST',
+      body: {
+        customer_name: name,
+        customer_phone: phone,
+        order_type: type,
+        table_no: table,
+        address: addr,
+        items: manualItems,
+        subtotal: total,
+        delivery_fee: 0,
+        discount: 0,
+        total: total,
+        note: note,
+        status: 'new'
+      }
+    });
+    toast('✅ Order #'+saved[0].id+' placed!', 'green');
+    manualItems = [];
+    renderManualItems();
+    document.getElementById('m-name').value = '';
+    document.getElementById('m-phone').value = '';
+    document.getElementById('m-note').value = '';
+    document.getElementById('m-table').value = '';
+    document.getElementById('m-addr').value = '';
+    await loadOrders();
+    switchTab('new');
+  } catch(e){
+    toast('Error placing order', 'red');
+  }
+  btn.disabled = false; btn.textContent = '✅ Place Order';
+}
+
+// ══════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════
+function toast(msg, type){
+  const el = document.createElement('div');
+  el.className = 'toast '+(type||'');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+
+// ══════════════════════════════════════
+// AUTO REFRESH every 15 seconds
+// ══════════════════════════════════════
+loadOrders();
+setInterval(loadOrders, 15000);
+</script>
+</body>
+</html>
