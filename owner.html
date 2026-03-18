@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sahi Owner Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#E8131B;--blue:#1565C0;--bluelight:#E3F0FF;
+  --yellow:#FFC107;--green:#16a34a;--orange:#f97316;
+  --bg:#0f172a;--card:#1e293b;--border:#334155;
+  --txt:#f1f5f9;--sub:#94a3b8;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:80px}
+
+/* PIN SCREEN */
+.pin-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.pin-logo{font-size:52px;margin-bottom:10px}
+.pin-title{font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:var(--txt);margin-bottom:4px}
+.pin-sub{font-size:12px;color:var(--sub);font-weight:600;margin-bottom:28px}
+.pin-dots{display:flex;gap:14px;margin-bottom:28px}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:var(--border);transition:background .2s}
+.pin-dot.filled{background:var(--yellow)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:240px}
+.pin-btn{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px;font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:var(--txt);cursor:pointer;text-align:center;transition:background .15s,transform .1s}
+.pin-btn:active{background:#334155;transform:scale(.93)}
+.pin-btn.del{font-size:16px;color:var(--sub)}
+.pin-btn.empty{background:transparent;border:none;cursor:default}
+.pin-error{color:var(--red);font-size:12px;font-weight:700;margin-top:10px;min-height:18px}
+
+/* TOP BAR */
+.topbar{background:#0f172a;border-bottom:2px solid var(--border);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.tb-left{display:flex;align-items:center;gap:9px}
+.tb-logo{font-size:24px}
+.tb-title{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800}
+.tb-sub{font-size:10px;color:var(--sub);font-weight:600}
+.tb-right{display:flex;align-items:center;gap:8px}
+.tb-date{font-size:11px;color:var(--yellow);font-weight:700}
+.lock-btn{background:var(--border);border:none;border-radius:8px;padding:6px 11px;color:var(--sub);font-size:11px;font-weight:700;cursor:pointer}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:#0f172a;border-top:2px solid var(--border);display:flex;z-index:50}
+.bn{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;cursor:pointer;color:var(--sub);font-family:'Nunito',sans-serif;font-size:9px;font-weight:800;transition:color .15s}
+.bn.on{color:var(--yellow)}
+.bn-icon{font-size:20px}
+
+/* SECTIONS */
+.section{display:none;padding:14px}
+.section.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+.card-title{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;color:var(--txt);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat-box{background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:13px}
+.sb-val{font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;line-height:1}
+.sb-lbl{font-size:10px;color:var(--sub);font-weight:700;margin-top:3px}
+.yellow{color:var(--yellow)}
+.green{color:var(--green)}
+.blue{color:#38bdf8}
+.orange{color:var(--orange)}
+.red{color:var(--red)}
+
+/* PERIOD SELECTOR */
+.period-sel{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:3px}
+.period-sel::-webkit-scrollbar{display:none}
+.ps-btn{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);color:var(--sub);font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.ps-btn.on{background:var(--yellow);border-color:var(--yellow);color:#1a1a1a}
+
+/* CHART BAR */
+.chart-wrap{margin-bottom:14px}
+.chart-title{font-size:11px;color:var(--sub);font-weight:700;margin-bottom:8px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:80px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bar{width:100%;background:var(--blue);border-radius:4px 4px 0 0;transition:height .3s;min-height:3px}
+.bar-lbl{font-size:8px;color:var(--sub);font-weight:700}
+.bar-val{font-size:8px;color:var(--yellow);font-weight:800}
+
+/* TOP ITEMS */
+.top-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.top-item:last-child{border-bottom:none}
+.ti-rank{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;color:var(--sub);width:20px;text-align:center;flex-shrink:0}
+.ti-rank.gold{color:var(--yellow)}
+.ti-rank.silver{color:#94a3b8}
+.ti-rank.bronze{color:#cd7c3a}
+.ti-emoji{font-size:20px;flex-shrink:0}
+.ti-body{flex:1;min-width:0}
+.ti-name{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti-count{font-size:10px;color:var(--sub);font-weight:700}
+.ti-rev{font-family:'Baloo 2',sans-serif;font-size:12px;font-weight:800;color:var(--yellow);flex-shrink:0}
+
+/* EXPENSE */
+.exp-form{margin-bottom:14px}
+.ef-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.ef-input{width:100%;background:#0f172a;border:1.5px solid var(--border);border-radius:9px;padding:10px 11px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--txt);outline:none}
+.ef-input:focus{border-color:var(--yellow)}
+.ef-input::placeholder{color:#475569}
+.ef-select{width:100%;background:#0f172a;border:1.5px solid var(--border);border-radius:9px;padding:10px 11px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--txt);outline:none;cursor:pointer}
+.ef-btn{width:100%;background:var(--green);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:14px;cursor:pointer}
+.ef-btn:active{transform:scale(.98)}
+.exp-list-item{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--border)}
+.exp-list-item:last-child{border-bottom:none}
+.eli-cat{background:var(--bg);border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;color:var(--sub);white-space:nowrap}
+.eli-name{flex:1;font-size:13px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eli-amt{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--red);flex-shrink:0}
+.eli-date{font-size:10px;color:var(--sub);font-weight:600;flex-shrink:0}
+.eli-del{background:none;border:none;cursor:pointer;color:var(--sub);font-size:14px;padding:2px 5px}
+
+/* SUPPLIER */
+.sup-form{margin-bottom:14px}
+.sup-card{background:#0f172a;border-radius:11px;padding:12px;margin-bottom:8px;border:1.5px solid var(--border)}
+.sc-name{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;margin-bottom:3px}
+.sc-meta{font-size:11px;color:var(--sub);font-weight:700;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.sc-actions{display:flex;gap:7px}
+.sc-btn{border:none;border-radius:7px;padding:6px 12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;cursor:pointer}
+.sc-call{background:var(--green);color:#fff}
+.sc-del{background:var(--border);color:var(--sub)}
+.sc-order{background:var(--blue);color:#fff}
+
+/* PROFIT */
+.profit-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;font-weight:700}
+.profit-row:last-child{border-bottom:none}
+.profit-row.total{padding-top:12px;margin-top:4px;border-top:2px solid var(--border);border-bottom:none}
+.profit-row.total span:first-child{font-family:'Baloo 2',sans-serif;font-size:15px;font-weight:800}
+.profit-row.total span:last-child{font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800}
+
+/* FORM LABEL */
+.flabel{font-size:11px;color:var(--sub);font-weight:800;margin-bottom:5px;display:block}
+
+/* TOAST */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--card);color:var(--txt);padding:9px 19px;border-radius:28px;font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;animation:tin .3s ease;border:1.5px solid var(--border)}
+@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.toast.green{background:var(--green);border-color:var(--green)}
+.toast.red{background:var(--red);border-color:var(--red)}
+
+/* EMPTY */
+.empty{text-align:center;padding:30px 14px;color:var(--sub)}
+.empty-icon{font-size:40px;margin-bottom:8px}
+.empty-txt{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:580px;max-height:85vh;overflow-y:auto;padding:20px 16px 30px}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 16px}
+.modal-title{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;margin-bottom:14px}
+.modal-input{width:100%;background:#0f172a;border:1.5px solid var(--border);border-radius:9px;padding:11px 12px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--txt);outline:none;margin-bottom:10px}
+.modal-input:focus{border-color:var(--yellow)}
+.modal-input::placeholder{color:#475569}
+.modal-btn{width:100%;background:var(--green);color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:8px}
+.modal-cancel{width:100%;background:var(--border);color:var(--sub);border:none;border-radius:10px;padding:11px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div class="pin-screen" id="pinScreen">
+  <div class="pin-logo">👑</div>
+  <div class="pin-title">Owner Panel</div>
+  <div class="pin-sub">Sahi Pizza Cabin Point</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <button class="pin-btn empty"></button>
+    <button class="pin-btn" onclick="pinPress('0')">0</button>
+    <button class="pin-btn del" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-logo">👑</div>
+    <div>
+      <div class="tb-title">Owner Panel</div>
+      <div class="tb-sub">Sahi Pizza Cabin Point</div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-date" id="todayDate"></div>
+    <button class="lock-btn" onclick="lockApp()">🔒 Lock</button>
+  </div>
+</div>
+
+<!-- DASHBOARD SECTION -->
+<div class="section active" id="sec-dashboard">
+
+  <!-- Period Selector -->
+  <div class="period-sel" style="margin-top:14px">
+    <button class="ps-btn on" onclick="setPeriod('today',this)">Today</button>
+    <button class="ps-btn" onclick="setPeriod('week',this)">This Week</button>
+    <button class="ps-btn" onclick="setPeriod('month',this)">This Month</button>
+    <button class="ps-btn" onclick="setPeriod('all',this)">All Time</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-grid">
+    <div class="stat-box"><div class="sb-val yellow" id="d-sales">Rs.0</div><div class="sb-lbl">💰 Total Sales</div></div>
+    <div class="stat-box"><div class="sb-val green" id="d-profit">Rs.0</div><div class="sb-lbl">📈 Net Profit</div></div>
+    <div class="stat-box"><div class="sb-val blue" id="d-orders">0</div><div class="sb-lbl">📦 Orders</div></div>
+    <div class="stat-box"><div class="sb-val orange" id="d-avg">Rs.0</div><div class="sb-lbl">🧾 Avg Order</div></div>
+  </div>
+
+  <!-- Sales Chart -->
+  <div class="card">
+    <div class="card-title">📊 Sales — Last 7 Days</div>
+    <div class="bars" id="salesChart"></div>
+  </div>
+
+  <!-- Order Type Breakdown -->
+  <div class="card">
+    <div class="card-title">🍽️ Order Type Breakdown</div>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1;background:#0f172a;border-radius:10px;padding:11px;text-align:center">
+        <div style="font-size:20px">🍽️</div>
+        <div style="font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;color:#a78bfa" id="d-dine">0</div>
+        <div style="font-size:10px;color:var(--sub);font-weight:700">Dine In</div>
+      </div>
+      <div style="flex:1;background:#0f172a;border-radius:10px;padding:11px;text-align:center">
+        <div style="font-size:20px">🚶</div>
+        <div style="font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;color:var(--yellow)" id="d-pickup">0</div>
+        <div style="font-size:10px;color:var(--sub);font-weight:700">Pickup</div>
+      </div>
+      <div style="flex:1;background:#0f172a;border-radius:10px;padding:11px;text-align:center">
+        <div style="font-size:20px">🏠</div>
+        <div style="font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;color:#38bdf8" id="d-delivery">0</div>
+        <div style="font-size:10px;color:var(--sub);font-weight:700">Delivery</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Items -->
+  <div class="card">
+    <div class="card-title">🏆 Top Selling Items</div>
+    <div id="topItemsList"><div class="empty"><div class="empty-icon">📊</div><div class="empty-txt">Loading...</div></div></div>
+  </div>
+
+</div>
+
+<!-- EXPENSES SECTION -->
+<div class="section" id="sec-expenses">
+
+  <!-- Add Expense -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-title">➕ Add Expense — خرچہ درج کریں</div>
+    <div class="exp-form">
+      <div class="ef-row">
+        <div>
+          <label class="flabel">Category</label>
+          <select class="ef-select" id="exp-cat">
+            <option value="ingredients">🥬 Ingredients</option>
+            <option value="utilities">💡 Utilities (Gas/Bijli)</option>
+            <option value="salary">👨‍💼 Staff Salary</option>
+            <option value="rent">🏠 Rent</option>
+            <option value="packaging">📦 Packaging</option>
+            <option value="maintenance">🔧 Maintenance</option>
+            <option value="other">📌 Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="flabel">Amount (Rs.)</label>
+          <input class="ef-input" id="exp-amt" type="number" placeholder="0">
+        </div>
+      </div>
+      <label class="flabel">Description</label>
+      <input class="ef-input" id="exp-desc" type="text" placeholder="e.g. Atta 50kg, WAPDA bill..." style="margin-bottom:10px">
+      <label class="flabel">Date</label>
+      <input class="ef-input" id="exp-date" type="date" style="margin-bottom:10px">
+      <button class="ef-btn" onclick="addExpense()">💾 Save Expense</button>
+    </div>
+  </div>
+
+  <!-- Profit Summary -->
+  <div class="card">
+    <div class="card-title">📈 Profit Summary — آج</div>
+    <div class="profit-row"><span style="color:var(--sub)">💰 Total Sales</span><span class="yellow" id="ps-sales">Rs. 0</span></div>
+    <div class="profit-row"><span style="color:var(--sub)">💸 Total Expenses</span><span class="red" id="ps-exp">Rs. 0</span></div>
+    <div class="profit-row total"><span>📈 Net Profit</span><span class="green" id="ps-profit">Rs. 0</span></div>
+  </div>
+
+  <!-- Expense List -->
+  <div class="card">
+    <div class="card-title">📋 Recent Expenses</div>
+    <div id="expenseList"><div class="empty"><div class="empty-icon">💸</div><div class="empty-txt">Koi expense nahi abhi</div></div></div>
+  </div>
+
+</div>
+
+<!-- SUPPLIERS SECTION -->
+<div class="section" id="sec-suppliers">
+
+  <div style="margin-top:14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800">🚚 Suppliers</div>
+    <button onclick="openSupplierModal()" style="background:var(--green);color:#fff;border:none;border-radius:9px;padding:8px 14px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;cursor:pointer">+ Add</button>
+  </div>
+
+  <div id="supplierList"><div class="empty"><div class="empty-icon">🚚</div><div class="empty-txt">Koi supplier nahi abhi</div></div></div>
+
+</div>
+
+<!-- REPORTS SECTION -->
+<div class="section" id="sec-reports">
+
+  <div style="margin-top:14px">
+
+    <!-- Quick Stats -->
+    <div class="card">
+      <div class="card-title">📊 All Time Summary</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="sb-val yellow" id="r-total">Rs.0</div><div class="sb-lbl">Total Revenue</div></div>
+        <div class="stat-box"><div class="sb-val blue" id="r-orders">0</div><div class="sb-lbl">Total Orders</div></div>
+        <div class="stat-box"><div class="sb-val green" id="r-done">0</div><div class="sb-lbl">Completed</div></div>
+        <div class="stat-box"><div class="sb-val orange" id="r-avg">Rs.0</div><div class="sb-lbl">Avg Order Value</div></div>
+      </div>
+    </div>
+
+    <!-- All Orders Table -->
+    <div class="card">
+      <div class="card-title">📋 Recent Orders</div>
+      <div id="reportOrders"></div>
+    </div>
+
+    <!-- WhatsApp Report -->
+    <div class="card">
+      <div class="card-title">💬 Send Report via WhatsApp</div>
+      <div style="font-size:12px;color:var(--sub);font-weight:600;margin-bottom:12px">Aaj ki complete report WhatsApp par bhejein</div>
+      <button onclick="sendWhatsAppReport()" style="width:100%;background:#25D366;color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        💬 Send Today's Report
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <button class="bn on" id="bn-dashboard" onclick="switchSection('dashboard')">
+    <span class="bn-icon">📊</span>Dashboard
+  </button>
+  <button class="bn" id="bn-expenses" onclick="switchSection('expenses')">
+    <span class="bn-icon">💸</span>Expenses
+  </button>
+  <button class="bn" id="bn-suppliers" onclick="switchSection('suppliers')">
+    <span class="bn-icon">🚚</span>Suppliers
+  </button>
+  <button class="bn" id="bn-reports" onclick="switchSection('reports')">
+    <span class="bn-icon">📋</span>Reports
+  </button>
+</div>
+
+</div>
+
+<!-- SUPPLIER MODAL -->
+<div class="modal-overlay hidden" id="supplierModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🚚 Add Supplier</div>
+    <input class="modal-input" id="sup-name" placeholder="Supplier Name — نام *">
+    <input class="modal-input" id="sup-phone" type="tel" placeholder="Phone Number — فون *">
+    <input class="modal-input" id="sup-items" placeholder="Kya supply karta hai (e.g. Cheese, Chicken)">
+    <input class="modal-input" id="sup-notes" placeholder="Notes (optional)">
+    <button class="modal-btn" onclick="saveSupplier()">💾 Save Supplier</button>
+    <button class="modal-cancel" onclick="closeSupplierModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+const SUPABASE_URL = 'https://pqrwjswpxssjfxnzrpfj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxcndqc3dweHNzamZ4bnpycGZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTQwMDMsImV4cCI6MjA4OTQzMDAwM30.a4L0JD3gWd76CW89OSa5-t2U55Cjq5I5UAr6W7GWXOQ';
+const OWNER_PIN = '1122'; // ← OWNER KA PIN — CHANGE KARO
+
+// ══════════════════════════════════════
+// PIN SYSTEM
+// ══════════════════════════════════════
+let pinEntry = '';
+
+function pinPress(digit){
+  if(pinEntry.length >= 4) return;
+  pinEntry += digit;
+  updatePinDots();
+  if(pinEntry.length === 4) setTimeout(checkPin, 150);
+}
+
+function pinDel(){
+  pinEntry = pinEntry.slice(0,-1);
+  updatePinDots();
+  document.getElementById('pinError').textContent = '';
+}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    document.getElementById('pd'+i).classList.toggle('filled', i < pinEntry.length);
+  }
+}
+
+function checkPin(){
+  if(pinEntry === OWNER_PIN){
+    document.getElementById('pinScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('pinError').textContent = '❌ Wrong PIN — Dobara try karein';
+    pinEntry = '';
+    updatePinDots();
+  }
+}
+
+function lockApp(){
+  if(!confirm('Lock karna chahte hain?')) return;
+  pinEntry = '';
+  updatePinDots();
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('pinScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+let allOrders = [];
+let expenses = [];
+let suppliers = [];
+let currentPeriod = 'today';
+
+function initApp(){
+  // Set today date
+  const now = new Date();
+  document.getElementById('todayDate').textContent = now.toLocaleDateString('en-PK',{day:'numeric',month:'short',year:'numeric'});
+  // Set default date in expense form
+  document.getElementById('exp-date').value = now.toISOString().split('T')[0];
+  // Load data
+  loadAll();
+}
+
+async function loadAll(){
+  await Promise.all([loadOrders(), loadExpenses(), loadSuppliers()]);
+}
+
+// ══════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════
+async function dbGet(path){
+  const res = await fetch(SUPABASE_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function dbPost(path, body){
+  const res = await fetch(SUPABASE_URL+'/rest/v1/'+path,{
+    method:'POST',
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+    body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function dbDelete(path){
+  const res = await fetch(SUPABASE_URL+'/rest/v1/'+path,{
+    method:'DELETE',
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+  });
+  if(!res.ok) throw new Error(await res.text());
+}
+
+// ══════════════════════════════════════
+// ORDERS
+// ══════════════════════════════════════
+async function loadOrders(){
+  try {
+    allOrders = await dbGet('orders?order=created_at.desc');
+    renderDashboard();
+    renderReports();
+  } catch(e){ console.error(e); }
+}
+
+function getFilteredOrders(period){
+  const now = new Date();
+  return allOrders.filter(o => {
+    const d = new Date(o.created_at);
+    if(period==='today'){
+      return d.toDateString() === now.toDateString();
+    } else if(period==='week'){
+      const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
+      return d >= weekAgo;
+    } else if(period==='month'){
+      return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+    }
+    return true;
+  });
+}
+
+function setPeriod(period, btn){
+  currentPeriod = period;
+  document.querySelectorAll('.ps-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const orders = getFilteredOrders(currentPeriod);
+  const done = orders.filter(o=>o.status==='done');
+  const sales = done.reduce((s,o)=>s+o.total,0);
+  const todayExp = getTodayExpenses();
+  const profit = sales - todayExp;
+  const avg = done.length ? Math.round(sales/done.length) : 0;
+
+  document.getElementById('d-sales').textContent = 'Rs.'+sales.toLocaleString();
+  document.getElementById('d-profit').textContent = 'Rs.'+profit.toLocaleString();
+  document.getElementById('d-orders').textContent = done.length;
+  document.getElementById('d-avg').textContent = 'Rs.'+avg.toLocaleString();
+  document.getElementById('d-dine').textContent = orders.filter(o=>o.order_type==='dine').length;
+  document.getElementById('d-pickup').textContent = orders.filter(o=>o.order_type==='pickup').length;
+  document.getElementById('d-delivery').textContent = orders.filter(o=>o.order_type==='delivery').length;
+
+  renderSalesChart();
+  renderTopItems(orders);
+  renderProfitSummary();
+}
+
+function renderSalesChart(){
+  const chart = document.getElementById('salesChart');
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const dayOrders = allOrders.filter(o=>{
+      return new Date(o.created_at).toDateString()===d.toDateString() && o.status==='done';
+    });
+    const total = dayOrders.reduce((s,o)=>s+o.total,0);
+    days.push({
+      label: d.toLocaleDateString('en-PK',{weekday:'short'}),
+      total
+    });
+  }
+  const max = Math.max(...days.map(d=>d.total),1);
+  chart.innerHTML = days.map(d=>{
+    const h = Math.max(Math.round((d.total/max)*70),3);
+    const isToday = d.label === new Date().toLocaleDateString('en-PK',{weekday:'short'});
+    return '<div class="bar-wrap">'
+      +'<div class="bar-val">'+(d.total>0?'Rs.'+(d.total/1000).toFixed(1)+'k':'')+'</div>'
+      +'<div class="bar" style="height:'+h+'px;background:'+(isToday?'var(--yellow)':'var(--blue)')+'"></div>'
+      +'<div class="bar-lbl">'+d.label+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function renderTopItems(orders){
+  const itemMap = {};
+  orders.forEach(o=>{
+    if(!Array.isArray(o.items)) return;
+    o.items.forEach(i=>{
+      if(!itemMap[i.name]) itemMap[i.name]={name:i.name,emoji:i.emoji||'🍕',count:0,revenue:0};
+      itemMap[i.name].count += i.qty||1;
+      itemMap[i.name].revenue += (i.price||0)*(i.qty||1);
+    });
+  });
+  const sorted = Object.values(itemMap).sort((a,b)=>b.count-a.count).slice(0,8);
+  const el = document.getElementById('topItemsList');
+  if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-txt">Koi data nahi abhi</div></div>';return;}
+  const ranks = ['🥇','🥈','🥉'];
+  const rankClass = ['gold','silver','bronze'];
+  el.innerHTML = sorted.map((it,i)=>
+    '<div class="top-item">'
+    +'<div class="ti-rank '+(rankClass[i]||'')+'">'+(ranks[i]||i+1)+'</div>'
+    +'<div class="ti-emoji">'+it.emoji+'</div>'
+    +'<div class="ti-body"><div class="ti-name">'+it.name+'</div><div class="ti-count">'+it.count+' orders</div></div>'
+    +'<div class="ti-rev">Rs.'+it.revenue.toLocaleString()+'</div>'
+    +'</div>'
+  ).join('');
+}
+
+// ══════════════════════════════════════
+// EXPENSES — localStorage (free, instant)
+// ══════════════════════════════════════
+function loadExpenses(){
+  try { expenses = JSON.parse(localStorage.getItem('sahi_expenses')||'[]'); } catch(e){ expenses=[]; }
+  renderExpenses();
+  renderProfitSummary();
+}
+
+function saveExpensesLocal(){
+  localStorage.setItem('sahi_expenses', JSON.stringify(expenses));
+}
+
+function getTodayExpenses(){
+  const today = new Date().toDateString();
+  return expenses.filter(e=>new Date(e.date).toDateString()===today).reduce((s,e)=>s+e.amount,0);
+}
+
+function addExpense(){
+  const cat = document.getElementById('exp-cat').value;
+  const amt = parseInt(document.getElementById('exp-amt').value);
+  const desc = document.getElementById('exp-desc').value.trim();
+  const date = document.getElementById('exp-date').value;
+  if(!amt||amt<=0){toast('Amount likhein!','red');return;}
+  if(!desc){toast('Description likhein!','red');return;}
+  expenses.unshift({id:Date.now(),cat,amount:amt,desc,date});
+  saveExpensesLocal();
+  document.getElementById('exp-amt').value='';
+  document.getElementById('exp-desc').value='';
+  renderExpenses();
+  renderProfitSummary();
+  renderDashboard();
+  toast('✅ Expense saved!','green');
+}
+
+function deleteExpense(id){
+  if(!confirm('Delete karein?')) return;
+  expenses = expenses.filter(e=>e.id!==id);
+  saveExpensesLocal();
+  renderExpenses();
+  renderProfitSummary();
+  renderDashboard();
+  toast('Deleted','green');
+}
+
+const catLabels = {
+  ingredients:'🥬 Ingredients',utilities:'💡 Utilities',salary:'👨‍💼 Salary',
+  rent:'🏠 Rent',packaging:'📦 Packaging',maintenance:'🔧 Maintenance',other:'📌 Other'
+};
+
+function renderExpenses(){
+  const el = document.getElementById('expenseList');
+  if(!expenses.length){el.innerHTML='<div class="empty"><div class="empty-icon">💸</div><div class="empty-txt">Koi expense nahi</div></div>';return;}
+  el.innerHTML = expenses.slice(0,30).map(e=>
+    '<div class="exp-list-item">'
+    +'<span class="eli-cat">'+(catLabels[e.cat]||e.cat)+'</span>'
+    +'<span class="eli-name">'+e.desc+'</span>'
+    +'<span class="eli-amt">Rs.'+e.amount.toLocaleString()+'</span>'
+    +'<span class="eli-date">'+new Date(e.date).toLocaleDateString('en-PK',{day:'numeric',month:'short'})+'</span>'
+    +'<button class="eli-del" onclick="deleteExpense('+e.id+')">🗑️</button>'
+    +'</div>'
+  ).join('');
+}
+
+function renderProfitSummary(){
+  const today = new Date().toDateString();
+  const todayOrders = allOrders.filter(o=>new Date(o.created_at).toDateString()===today&&o.status==='done');
+  const sales = todayOrders.reduce((s,o)=>s+o.total,0);
+  const exp = getTodayExpenses();
+  const profit = sales - exp;
+  document.getElementById('ps-sales').textContent = 'Rs. '+sales.toLocaleString();
+  document.getElementById('ps-exp').textContent = 'Rs. '+exp.toLocaleString();
+  const profEl = document.getElementById('ps-profit');
+  profEl.textContent = 'Rs. '+profit.toLocaleString();
+  profEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+// ══════════════════════════════════════
+// SUPPLIERS — localStorage
+// ══════════════════════════════════════
+function loadSuppliers(){
+  try { suppliers = JSON.parse(localStorage.getItem('sahi_suppliers')||'[]'); } catch(e){ suppliers=[]; }
+  renderSuppliers();
+}
+
+function saveSuppliers(){
+  localStorage.setItem('sahi_suppliers', JSON.stringify(suppliers));
+}
+
+function openSupplierModal(){ document.getElementById('supplierModal').classList.remove('hidden'); }
+function closeSupplierModal(){
+  document.getElementById('supplierModal').classList.add('hidden');
+  ['sup-name','sup-phone','sup-items','sup-notes'].forEach(id=>document.getElementById(id).value='');
+}
+
+function saveSupplier(){
+  const name = document.getElementById('sup-name').value.trim();
+  const phone = document.getElementById('sup-phone').value.trim();
+  const items = document.getElementById('sup-items').value.trim();
+  const notes = document.getElementById('sup-notes').value.trim();
+  if(!name||!phone){toast('Naam aur phone zaroori hai!','red');return;}
+  suppliers.unshift({id:Date.now(),name,phone,items,notes,addedOn:new Date().toISOString()});
+  saveSuppliers();
+  renderSuppliers();
+  closeSupplierModal();
+  toast('✅ Supplier saved!','green');
+}
+
+function deleteSupplier(id){
+  if(!confirm('Delete karein?')) return;
+  suppliers = suppliers.filter(s=>s.id!==id);
+  saveSuppliers();
+  renderSuppliers();
+  toast('Deleted','green');
+}
+
+function renderSuppliers(){
+  const el = document.getElementById('supplierList');
+  if(!suppliers.length){el.innerHTML='<div class="empty"><div class="empty-icon">🚚</div><div class="empty-txt">Koi supplier nahi — Add karein!</div></div>';return;}
+  el.innerHTML = suppliers.map(s=>
+    '<div class="sup-card">'
+    +'<div class="sc-name">'+s.name+'</div>'
+    +'<div class="sc-meta">'
+    +'<span>📱 '+s.phone+'</span>'
+    +(s.items?'<span>📦 '+s.items+'</span>':'')
+    +(s.notes?'<span>📝 '+s.notes+'</span>':'')
+    +'</div>'
+    +'<div class="sc-actions">'
+    +'<button class="sc-btn sc-call" onclick="window.open(\'tel:'+s.phone+'\')">📞 Call</button>'
+    +'<button class="sc-btn sc-order" onclick="window.open(\'https://wa.me/92\'+\''+s.phone.replace(/^0/,'')+'\'.replace(/-/g,\'\'))">💬 WhatsApp</button>'
+    +'<button class="sc-btn sc-del" onclick="deleteSupplier('+s.id+')">🗑️</button>'
+    +'</div>'
+    +'</div>'
+  ).join('');
+}
+
+// ══════════════════════════════════════
+// REPORTS
+// ══════════════════════════════════════
+function renderReports(){
+  const total = allOrders.filter(o=>o.status==='done').reduce((s,o)=>s+o.total,0);
+  const done = allOrders.filter(o=>o.status==='done').length;
+  const avg = done ? Math.round(total/done) : 0;
+  document.getElementById('r-total').textContent = 'Rs.'+total.toLocaleString();
+  document.getElementById('r-orders').textContent = allOrders.length;
+  document.getElementById('r-done').textContent = done;
+  document.getElementById('r-avg').textContent = 'Rs.'+avg.toLocaleString();
+
+  const el = document.getElementById('reportOrders');
+  if(!allOrders.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">Koi order nahi abhi</div></div>';return;}
+  el.innerHTML = allOrders.slice(0,20).map(o=>{
+    const statusColor = o.status==='done'?'var(--green)':o.status==='new'?'var(--red)':'var(--orange)';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px">'
+      +'<span style="font-family:\'Baloo 2\',sans-serif;font-weight:800;color:var(--sub);width:30px">#'+o.id+'</span>'
+      +'<span style="flex:1;font-weight:700">'+o.customer_name+'</span>'
+      +'<span style="font-family:\'Baloo 2\',sans-serif;font-weight:800;color:var(--yellow)">Rs.'+o.total+'</span>'
+      +'<span style="font-weight:800;color:'+statusColor+';font-size:10px;background:var(--bg);padding:2px 7px;border-radius:6px">'+o.status.toUpperCase()+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+function sendWhatsAppReport(){
+  const today = new Date().toDateString();
+  const todayOrders = allOrders.filter(o=>new Date(o.created_at).toDateString()===today);
+  const done = todayOrders.filter(o=>o.status==='done');
+  const sales = done.reduce((s,o)=>s+o.total,0);
+  const exp = getTodayExpenses();
+  const profit = sales - exp;
+
+  // Top item today
+  const itemMap = {};
+  done.forEach(o=>{
+    if(!Array.isArray(o.items)) return;
+    o.items.forEach(i=>{
+      if(!itemMap[i.name]) itemMap[i.name]=0;
+      itemMap[i.name]+=i.qty||1;
+    });
+  });
+  const topItem = Object.entries(itemMap).sort((a,b)=>b[1]-a[1])[0];
+
+  let msg = '📊 *SAHI PIZZA — Daily Report*\n';
+  msg += '📅 '+new Date().toLocaleDateString('en-PK',{day:'numeric',month:'long',year:'numeric'})+'\n\n';
+  msg += '💰 *Total Sales:* Rs.'+sales.toLocaleString()+'\n';
+  msg += '📦 *Orders Completed:* '+done.length+'\n';
+  msg += '🍽️ Dine In: '+todayOrders.filter(o=>o.order_type==='dine').length+'\n';
+  msg += '🚶 Pickup: '+todayOrders.filter(o=>o.order_type==='pickup').length+'\n';
+  msg += '🏠 Delivery: '+todayOrders.filter(o=>o.order_type==='delivery').length+'\n';
+  if(topItem) msg += '🏆 *Top Item:* '+topItem[0]+' ('+topItem[1]+'x)\n';
+  msg += '💸 *Expenses:* Rs.'+exp.toLocaleString()+'\n';
+  msg += '📈 *Net Profit:* Rs.'+profit.toLocaleString()+'\n\n';
+  msg += '🍕 Sahi Pizza Cabin Point';
+
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+function switchSection(sec){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.bn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('sec-'+sec).classList.add('active');
+  document.getElementById('bn-'+sec).classList.add('on');
+  if(sec==='reports') renderReports();
+  if(sec==='dashboard') renderDashboard();
+}
+
+// ══════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════
+function toast(msg,type){
+  const el=document.createElement('div');
+  el.className='toast '+(type||'');
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2500);
+}
+</script>
+</body>
+</html>
