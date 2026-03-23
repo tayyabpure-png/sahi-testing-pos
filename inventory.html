@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sahi Inventory</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f172a;--card:#1e293b;--border:#334155;
+  --txt:#f1f5f9;--sub:#94a3b8;
+  --green:#16a34a;--yellow:#FFC107;--red:#ef4444;--orange:#f97316;--blue:#1565C0;
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:30px}
+
+/* PIN */
+.pin-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.pin-logo{font-size:52px;margin-bottom:10px}
+.pin-title{font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;margin-bottom:4px}
+.pin-sub{font-size:12px;color:var(--sub);font-weight:600;margin-bottom:28px}
+.pin-dots{display:flex;gap:14px;margin-bottom:28px}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:var(--border);transition:background .2s}
+.pin-dot.filled{background:var(--orange)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:240px}
+.pin-btn{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px;font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:var(--txt);cursor:pointer;text-align:center;transition:background .15s,transform .1s}
+.pin-btn:active{background:#334155;transform:scale(.93)}
+.pin-btn.del{font-size:16px;color:var(--sub)}
+.pin-btn.empty{background:transparent;border:none;cursor:default}
+.pin-error{color:var(--red);font-size:12px;font-weight:700;margin-top:10px;min-height:18px}
+
+/* TOPBAR */
+.topbar{background:#0f172a;border-bottom:2px solid var(--border);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.tb-left{display:flex;align-items:center;gap:9px}
+.tb-logo{font-size:22px}
+.tb-title{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800}
+.tb-sub{font-size:10px;color:var(--sub);font-weight:600}
+.lock-btn{background:var(--border);border:none;border-radius:8px;padding:6px 11px;color:var(--sub);font-size:11px;font-weight:700;cursor:pointer}
+
+/* ALERTS BANNER */
+.alerts-banner{background:rgba(239,68,68,.12);border:1.5px solid rgba(239,68,68,.3);border-radius:12px;padding:11px 13px;margin:12px 14px 0;display:none}
+.ab-title{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800;color:var(--red);margin-bottom:6px}
+.ab-item{font-size:12px;font-weight:700;color:#fca5a5;padding:2px 0;display:flex;align-items:center;gap:6px}
+
+/* TABS */
+.tabs{display:flex;gap:0;padding:12px 14px 0;border-bottom:1.5px solid var(--border)}
+.tab{padding:9px 16px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;border:none;background:none;color:var(--sub);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .15s}
+.tab.on{color:var(--txt);border-bottom-color:var(--orange)}
+
+/* MAIN */
+.main{padding:14px}
+
+/* STOCK SECTION */
+.cat-header{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;color:var(--sub);margin:16px 0 8px;display:flex;align-items:center;gap:7px;text-transform:uppercase;letter-spacing:.05em}
+.stock-item{background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:12px 13px;margin-bottom:8px;transition:border-color .2s}
+.stock-item.low{border-color:rgba(249,115,22,.5)}
+.stock-item.critical{border-color:rgba(239,68,68,.6)}
+.stock-item.ok{border-color:rgba(34,197,94,.25)}
+.si-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.si-left{display:flex;align-items:center;gap:9px}
+.si-emoji{font-size:24px}
+.si-name{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800}
+.si-unit{font-size:10px;color:var(--sub);font-weight:700}
+.si-badge{border-radius:7px;padding:3px 9px;font-size:10px;font-weight:800}
+.badge-ok{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-low{background:rgba(249,115,22,.15);color:var(--orange)}
+.badge-critical{background:rgba(239,68,68,.15);color:var(--red)}
+.si-bar-wrap{margin-bottom:9px}
+.si-bar-bg{background:var(--bg);border-radius:6px;height:7px;overflow:hidden}
+.si-bar-fill{height:100%;border-radius:6px;transition:width .4s}
+.si-bar-labels{display:flex;justify-content:space-between;margin-top:3px}
+.si-bar-cur{font-family:'Baloo 2',sans-serif;font-size:12px;font-weight:800}
+.si-bar-max{font-size:10px;color:var(--sub);font-weight:700}
+.si-actions{display:flex;gap:7px}
+.si-btn{flex:1;border:none;border-radius:8px;padding:8px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:12px;cursor:pointer;transition:transform .12s}
+.si-btn:active{transform:scale(.93)}
+.btn-add{background:var(--green);color:#fff}
+.btn-use{background:var(--border);color:var(--txt)}
+.btn-edit{background:var(--blue);color:#fff}
+
+/* ADD STOCK SECTION */
+.add-form{background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:14px;margin-bottom:12px}
+.form-title{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;margin-bottom:12px}
+.f-label{font-size:11px;color:var(--sub);font-weight:800;margin-bottom:5px;display:block}
+.f-input{width:100%;background:#0f172a;border:1.5px solid var(--border);border-radius:9px;padding:10px 11px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--txt);outline:none;margin-bottom:10px}
+.f-input:focus{border-color:var(--orange)}
+.f-input::placeholder{color:#475569}
+.f-select{width:100%;background:#0f172a;border:1.5px solid var(--border);border-radius:9px;padding:10px 11px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--txt);outline:none;margin-bottom:10px;cursor:pointer}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.f-btn{width:100%;background:var(--orange);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:14px;cursor:pointer}
+.f-btn:active{transform:scale(.98)}
+
+/* HISTORY */
+.hist-item{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.hist-item:last-child{border-bottom:none}
+.hist-type{border-radius:6px;padding:2px 8px;font-size:10px;font-weight:800;white-space:nowrap}
+.ht-add{background:rgba(34,197,94,.15);color:var(--green)}
+.ht-use{background:rgba(239,68,68,.15);color:var(--red)}
+.hist-name{flex:1;font-weight:700}
+.hist-amt{font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:800}
+.hist-time{font-size:10px;color:var(--sub);font-weight:600}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:580px;padding:20px 16px 32px}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 16px}
+.modal-title{font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;margin-bottom:14px}
+.modal-item-name{font-size:13px;color:var(--sub);font-weight:700;margin-bottom:12px}
+.modal-input{width:100%;background:#0f172a;border:1.5px solid var(--border);border-radius:9px;padding:11px 12px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;color:var(--txt);outline:none;margin-bottom:12px;text-align:center;font-size:22px}
+.modal-input:focus{border-color:var(--orange)}
+.modal-btn{width:100%;border:none;border-radius:10px;padding:13px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:8px}
+.modal-btn.green{background:var(--green);color:#fff}
+.modal-btn.red{background:var(--red);color:#fff}
+.modal-cancel{width:100%;background:var(--border);color:var(--sub);border:none;border-radius:10px;padding:11px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;cursor:pointer}
+
+/* TOAST */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--card);color:var(--txt);padding:9px 19px;border-radius:28px;font-family:'Baloo 2',sans-serif;font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;animation:tin .3s ease;border:1.5px solid var(--border)}
+@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.toast.green{background:var(--green);border-color:var(--green)}
+.toast.red{background:var(--red);border-color:var(--red)}
+.toast.orange{background:var(--orange);border-color:var(--orange)}
+
+.empty{text-align:center;padding:30px;color:var(--sub)}
+.empty-icon{font-size:40px;margin-bottom:8px}
+.empty-txt{font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800}
+</style>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div class="pin-screen" id="pinScreen">
+  <div class="pin-logo">📦</div>
+  <div class="pin-title">Inventory Panel</div>
+  <div class="pin-sub">Sahi Pizza Cabin Point — Stock Management</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <button class="pin-btn empty"></button>
+    <button class="pin-btn" onclick="pinPress('0')">0</button>
+    <button class="pin-btn del" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-logo">📦</div>
+    <div>
+      <div class="tb-title">Inventory</div>
+      <div class="tb-sub">Stock Management — Pizza Items</div>
+    </div>
+  </div>
+  <button class="lock-btn" onclick="lockApp()">🔒 Lock</button>
+</div>
+
+<!-- ALERTS -->
+<div class="alerts-banner" id="alertsBanner">
+  <div class="ab-title">⚠️ Low Stock Alert — Yeh items mangwao!</div>
+  <div id="alertsList"></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab on" id="tab-stock" onclick="switchTab('stock')">📦 Stock</button>
+  <button class="tab" id="tab-add" onclick="switchTab('add')">➕ Add Item</button>
+  <button class="tab" id="tab-history" onclick="switchTab('history')">📋 History</button>
+</div>
+
+<!-- STOCK TAB -->
+<div class="main" id="sec-stock">
+
+  <!-- DOUGH & BASE -->
+  <div class="cat-header">🫓 Dough & Base</div>
+  <div id="cat-dough"></div>
+
+  <!-- CHEESE -->
+  <div class="cat-header">🧀 Cheese</div>
+  <div id="cat-cheese"></div>
+
+  <!-- CHICKEN & MEAT -->
+  <div class="cat-header">🍗 Chicken & Meat</div>
+  <div id="cat-meat"></div>
+
+  <!-- VEGETABLES -->
+  <div class="cat-header">🥬 Vegetables & Toppings</div>
+  <div id="cat-veggies"></div>
+
+  <!-- SAUCES -->
+  <div class="cat-header">🫙 Sauces</div>
+  <div id="cat-sauces"></div>
+
+  <!-- PACKAGING -->
+  <div class="cat-header">📦 Packaging</div>
+  <div id="cat-packaging"></div>
+
+</div>
+
+<!-- ADD ITEM TAB -->
+<div class="main" id="sec-add" style="display:none">
+  <div class="add-form">
+    <div class="form-title">➕ Add New Stock Item</div>
+
+    <label class="f-label">Item Name — نام *</label>
+    <input class="f-input" id="ni-name" placeholder="e.g. Mozzarella Cheese">
+
+    <label class="f-label">Category</label>
+    <select class="f-select" id="ni-cat">
+      <option value="dough">🫓 Dough & Base</option>
+      <option value="cheese">🧀 Cheese</option>
+      <option value="meat">🍗 Chicken & Meat</option>
+      <option value="veggies">🥬 Vegetables & Toppings</option>
+      <option value="sauces">🫙 Sauces</option>
+      <option value="packaging">📦 Packaging</option>
+    </select>
+
+    <label class="f-label">Emoji</label>
+    <input class="f-input" id="ni-emoji" placeholder="🧀" maxlength="2">
+
+    <div class="f-row">
+      <div>
+        <label class="f-label">Current Stock *</label>
+        <input class="f-input" id="ni-stock" type="number" placeholder="10">
+      </div>
+      <div>
+        <label class="f-label">Unit (kg/L/pcs)</label>
+        <input class="f-input" id="ni-unit" placeholder="kg">
+      </div>
+    </div>
+
+    <div class="f-row">
+      <div>
+        <label class="f-label">Max Stock</label>
+        <input class="f-input" id="ni-max" type="number" placeholder="20">
+      </div>
+      <div>
+        <label class="f-label">⚠️ Low Stock Alert at</label>
+        <input class="f-input" id="ni-low" type="number" placeholder="5">
+      </div>
+    </div>
+
+    <button class="f-btn" onclick="addNewItem()">💾 Save Item</button>
+  </div>
+</div>
+
+<!-- HISTORY TAB -->
+<div class="main" id="sec-history" style="display:none">
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:14px">
+    <div style="font-family:'Baloo 2',sans-serif;font-size:14px;font-weight:800;margin-bottom:12px">📋 Stock History</div>
+    <div id="historyList"><div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">Koi activity nahi abhi</div></div></div>
+  </div>
+  <div style="margin-top:12px">
+    <button onclick="clearHistory()" style="width:100%;background:var(--border);color:var(--sub);border:none;border-radius:10px;padding:11px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;cursor:pointer">🗑️ Clear History</button>
+  </div>
+</div>
+
+</div>
+
+<!-- ADD STOCK MODAL -->
+<div class="modal-overlay hidden" id="stockModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Stock Add Karo</div>
+    <div class="modal-item-name" id="modalItemName"></div>
+    <input class="modal-input" id="modalQty" type="number" placeholder="0" min="0.1" step="0.1">
+    <div style="font-size:11px;color:var(--sub);font-weight:700;margin-bottom:12px;text-align:center" id="modalUnit"></div>
+    <button class="modal-btn green" id="modalConfirmBtn" onclick="confirmModal()">✅ Confirm</button>
+    <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════
+// PIN
+// ══════════════════════════
+const INV_PIN = '5678'; // ← INVENTORY PIN — CHANGE KARO
+let pinEntry = '';
+
+function pinPress(d){
+  if(pinEntry.length>=4) return;
+  pinEntry+=d;
+  updateDots();
+  if(pinEntry.length===4) setTimeout(checkPin,150);
+}
+function pinDel(){pinEntry=pinEntry.slice(0,-1);updateDots();document.getElementById('pinError').textContent='';}
+function updateDots(){for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled',i<pinEntry.length);}
+function checkPin(){
+  if(pinEntry===INV_PIN){
+    document.getElementById('pinScreen').style.display='none';
+    document.getElementById('mainApp').style.display='block';
+    initApp();
+  } else {
+    document.getElementById('pinError').textContent='❌ Wrong PIN';
+    pinEntry=''; updateDots();
+  }
+}
+function lockApp(){
+  if(!confirm('Lock karein?')) return;
+  pinEntry=''; updateDots();
+  document.getElementById('pinError').textContent='';
+  document.getElementById('pinScreen').style.display='flex';
+  document.getElementById('mainApp').style.display='none';
+}
+
+// ══════════════════════════
+// DEFAULT PIZZA INVENTORY
+// ══════════════════════════
+const DEFAULT_ITEMS = [
+  // Dough & Base
+  {id:'aata',    name:'Aata (Flour)',         cat:'dough',    emoji:'🌾', stock:25, max:50, low:10, unit:'kg'},
+  {id:'pizzabase',name:'Ready Pizza Base',    cat:'dough',    emoji:'🫓', stock:30, max:60, low:15, unit:'pcs'},
+  {id:'yeast',   name:'Yeast',                cat:'dough',    emoji:'🧪', stock:500,max:1000,low:200,unit:'g'},
+  {id:'oil',     name:'Cooking Oil',          cat:'dough',    emoji:'🫙', stock:5,  max:10, low:2,  unit:'L'},
+
+  // Cheese
+  {id:'mozzarella',name:'Mozzarella Cheese',  cat:'cheese',   emoji:'🧀', stock:8,  max:20, low:3,  unit:'kg'},
+  {id:'cheddar', name:'Cheddar Cheese',        cat:'cheese',   emoji:'🧀', stock:3,  max:10, low:2,  unit:'kg'},
+  {id:'cream',   name:'Cream Cheese',          cat:'cheese',   emoji:'🍦', stock:2,  max:5,  low:1,  unit:'kg'},
+
+  // Chicken & Meat
+  {id:'chicken', name:'Chicken (Boneless)',    cat:'meat',     emoji:'🍗', stock:10, max:25, low:5,  unit:'kg'},
+  {id:'tikka',   name:'Tikka Masala Chicken',  cat:'meat',     emoji:'🍢', stock:5,  max:15, low:3,  unit:'kg'},
+  {id:'kebab',   name:'Seekh Kebab',           cat:'meat',     emoji:'🍡', stock:3,  max:10, low:2,  unit:'kg'},
+  {id:'mince',   name:'Qeema (Mince)',         cat:'meat',     emoji:'🥩', stock:4,  max:10, low:2,  unit:'kg'},
+
+  // Vegetables & Toppings
+  {id:'capsicum', name:'Capsicum',             cat:'veggies',  emoji:'🫑', stock:3,  max:8,  low:1,  unit:'kg'},
+  {id:'onion',   name:'Onion — پیاز',          cat:'veggies',  emoji:'🧅', stock:5,  max:10, low:2,  unit:'kg'},
+  {id:'tomato',  name:'Tomato — ٹماٹر',        cat:'veggies',  emoji:'🍅', stock:4,  max:10, low:2,  unit:'kg'},
+  {id:'mushroom',name:'Mushroom',              cat:'veggies',  emoji:'🍄', stock:1,  max:4,  low:0.5,unit:'kg'},
+  {id:'olive',   name:'Olives',                cat:'veggies',  emoji:'🫒', stock:500,max:2000,low:300,unit:'g'},
+  {id:'corn',    name:'Sweet Corn',            cat:'veggies',  emoji:'🌽', stock:800,max:2000,low:400,unit:'g'},
+  {id:'jalapeno',name:'Jalapeno',              cat:'veggies',  emoji:'🌶️', stock:300,max:1000,low:200,unit:'g'},
+
+  // Sauces
+  {id:'tomatosauce',name:'Pizza Tomato Sauce', cat:'sauces',   emoji:'🍅', stock:5,  max:10, low:2,  unit:'kg'},
+  {id:'bbqsauce',name:'BBQ Sauce',             cat:'sauces',   emoji:'🫙', stock:3,  max:8,  low:1,  unit:'kg'},
+  {id:'garlicmayo',name:'Garlic Mayo',         cat:'sauces',   emoji:'🫙', stock:2,  max:6,  low:1,  unit:'kg'},
+  {id:'hotspicy', name:'Hot & Spicy Sauce',    cat:'sauces',   emoji:'🌶️', stock:2,  max:6,  low:1,  unit:'kg'},
+  {id:'whitesauce',name:'White Sauce',         cat:'sauces',   emoji:'🥛', stock:2,  max:5,  low:1,  unit:'kg'},
+
+  // Packaging
+  {id:'box_s',   name:'Pizza Box Small',       cat:'packaging',emoji:'📦', stock:50, max:200,low:30, unit:'pcs'},
+  {id:'box_m',   name:'Pizza Box Medium',      cat:'packaging',emoji:'📦', stock:40, max:150,low:25, unit:'pcs'},
+  {id:'box_l',   name:'Pizza Box Large',       cat:'packaging',emoji:'📦', stock:30, max:100,low:20, unit:'pcs'},
+  {id:'box_xl',  name:'Pizza Box XL',          cat:'packaging',emoji:'📦', stock:20, max:80, low:15, unit:'pcs'},
+  {id:'bags',    name:'Delivery Bags',         cat:'packaging',emoji:'🛍️', stock:25, max:50, low:10, unit:'pcs'},
+];
+
+// ══════════════════════════
+// STATE
+// ══════════════════════════
+let items = [];
+let history = [];
+let modalMode = ''; // 'add' or 'use'
+let modalItemId = '';
+
+function initApp(){
+  loadData();
+  renderAll();
+}
+
+function loadData(){
+  try {
+    const saved = localStorage.getItem('sahi_inventory');
+    items = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+    history = JSON.parse(localStorage.getItem('sahi_inv_history')||'[]');
+  } catch(e){
+    items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+    history = [];
+  }
+}
+
+function saveData(){
+  localStorage.setItem('sahi_inventory', JSON.stringify(items));
+  localStorage.setItem('sahi_inv_history', JSON.stringify(history));
+}
+
+// ══════════════════════════
+// RENDER
+// ══════════════════════════
+function renderAll(){
+  renderAlerts();
+  renderCategory('dough',   'cat-dough');
+  renderCategory('cheese',  'cat-cheese');
+  renderCategory('meat',    'cat-meat');
+  renderCategory('veggies', 'cat-veggies');
+  renderCategory('sauces',  'cat-sauces');
+  renderCategory('packaging','cat-packaging');
+  renderHistory();
+}
+
+function getStatus(item){
+  if(item.stock <= 0) return 'critical';
+  if(item.stock <= item.low) return item.stock <= item.low/2 ? 'critical' : 'low';
+  return 'ok';
+}
+
+function getBarColor(status){
+  if(status==='critical') return 'var(--red)';
+  if(status==='low') return 'var(--orange)';
+  return 'var(--green)';
+}
+
+function getBadge(status, item){
+  if(status==='critical') return '<span class="si-badge badge-critical">🔴 Critical — '+item.stock+' '+item.unit+' bachi!</span>';
+  if(status==='low') return '<span class="si-badge badge-low">⚠️ Low — '+item.stock+' '+item.unit+'</span>';
+  return '<span class="si-badge badge-ok">✅ OK — '+item.stock+' '+item.unit+'</span>';
+}
+
+function renderCategory(cat, elId){
+  const el = document.getElementById(elId);
+  const catItems = items.filter(i=>i.cat===cat);
+  if(!catItems.length){el.innerHTML='<div style="font-size:12px;color:var(--sub);padding:8px 0">Koi item nahi — Add tab mein add karo</div>';return;}
+  el.innerHTML = catItems.map(item => {
+    const status = getStatus(item);
+    const pct = Math.min(100, Math.round((item.stock/item.max)*100));
+    return '<div class="stock-item '+status+'" id="si-'+item.id+'">'
+      +'<div class="si-top">'
+      +'<div class="si-left"><div class="si-emoji">'+item.emoji+'</div><div><div class="si-name">'+item.name+'</div><div class="si-unit">Per unit: '+item.unit+'</div></div></div>'
+      +getBadge(status, item)
+      +'</div>'
+      +'<div class="si-bar-wrap">'
+      +'<div class="si-bar-bg"><div class="si-bar-fill" style="width:'+pct+'%;background:'+getBarColor(status)+'"></div></div>'
+      +'<div class="si-bar-labels"><span class="si-bar-cur" style="color:'+getBarColor(status)+'">'+item.stock+' '+item.unit+'</span><span class="si-bar-max">Max: '+item.max+' '+item.unit+'</span></div>'
+      +'</div>'
+      +'<div class="si-actions">'
+      +'<button class="si-btn btn-add" onclick="openModal(\''+item.id+'\',\'add\')">+ Stock Add</button>'
+      +'<button class="si-btn btn-use" onclick="openModal(\''+item.id+'\',\'use\')">− Use</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function renderAlerts(){
+  const low = items.filter(i=>getStatus(i)!=='ok');
+  const banner = document.getElementById('alertsBanner');
+  const list = document.getElementById('alertsList');
+  if(!low.length){banner.style.display='none';return;}
+  banner.style.display='block';
+  list.innerHTML = low.map(i=>
+    '<div class="ab-item">'+i.emoji+' '+i.name+' — sirf <b>'+i.stock+' '+i.unit+'</b> bachi hai</div>'
+  ).join('');
+}
+
+function renderHistory(){
+  const el = document.getElementById('historyList');
+  if(!history.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">Koi activity nahi</div></div>';return;}
+  el.innerHTML = history.slice(0,40).map(h=>
+    '<div class="hist-item">'
+    +'<span class="hist-type '+(h.type==='add'?'ht-add':'ht-use')+'">'+(h.type==='add'?'+ Added':'− Used')+'</span>'
+    +'<span class="hist-name">'+h.name+'</span>'
+    +'<span class="hist-amt" style="color:'+(h.type==='add'?'var(--green)':'var(--red)')+'"> '+(h.type==='add'?'+':'-')+h.qty+' '+h.unit+'</span>'
+    +'<span class="hist-time">'+timeAgo(h.time)+'</span>'
+    +'</div>'
+  ).join('');
+}
+
+function timeAgo(ts){
+  const diff = (Date.now()-ts)/1000;
+  if(diff<60) return Math.floor(diff)+'s ago';
+  if(diff<3600) return Math.floor(diff/60)+'m ago';
+  if(diff<86400) return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+
+// ══════════════════════════
+// MODAL
+// ══════════════════════════
+function openModal(id, mode){
+  const item = items.find(i=>i.id===id);
+  if(!item) return;
+  modalMode = mode;
+  modalItemId = id;
+  document.getElementById('modalTitle').textContent = mode==='add' ? '➕ Stock Add Karo' : '➖ Stock Use Karo';
+  document.getElementById('modalItemName').textContent = item.emoji+' '+item.name+' — Current: '+item.stock+' '+item.unit;
+  document.getElementById('modalUnit').textContent = 'Amount in: '+item.unit;
+  document.getElementById('modalQty').value = '';
+  const btn = document.getElementById('modalConfirmBtn');
+  btn.className = 'modal-btn '+(mode==='add'?'green':'red');
+  btn.textContent = mode==='add' ? '✅ Add Stock' : '✅ Mark as Used';
+  document.getElementById('stockModal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('modalQty').focus(),100);
+}
+
+function closeModal(){
+  document.getElementById('stockModal').classList.add('hidden');
+  modalItemId=''; modalMode='';
+}
+
+function confirmModal(){
+  const qty = parseFloat(document.getElementById('modalQty').value);
+  if(!qty||qty<=0){toast('Amount likhein!','red');return;}
+  const item = items.find(i=>i.id===modalItemId);
+  if(!item) return;
+
+  if(modalMode==='add'){
+    item.stock = Math.round((item.stock + qty)*10)/10;
+    history.unshift({type:'add',name:item.name,qty,unit:item.unit,time:Date.now()});
+    toast('✅ '+qty+' '+item.unit+' added — '+item.name,'green');
+  } else {
+    if(qty > item.stock){toast('Itna stock nahi hai!','red');return;}
+    item.stock = Math.round((item.stock - qty)*10)/10;
+    history.unshift({type:'use',name:item.name,qty,unit:item.unit,time:Date.now()});
+    toast('✅ '+qty+' '+item.unit+' used — '+item.name,'orange');
+  }
+
+  saveData();
+  closeModal();
+  renderAll();
+}
+
+// ══════════════════════════
+// ADD NEW ITEM
+// ══════════════════════════
+function addNewItem(){
+  const name = document.getElementById('ni-name').value.trim();
+  const cat = document.getElementById('ni-cat').value;
+  const emoji = document.getElementById('ni-emoji').value.trim() || '📦';
+  const stock = parseFloat(document.getElementById('ni-stock').value)||0;
+  const unit = document.getElementById('ni-unit').value.trim()||'pcs';
+  const max = parseFloat(document.getElementById('ni-max').value)||stock*2;
+  const low = parseFloat(document.getElementById('ni-low').value)||Math.round(max*0.25);
+
+  if(!name){toast('Naam likhein!','red');return;}
+
+  const id = 'item_'+Date.now();
+  items.push({id,name,cat,emoji,stock,unit,max,low});
+  saveData();
+  renderAll();
+
+  // Clear form
+  ['ni-name','ni-emoji','ni-stock','ni-unit','ni-max','ni-low'].forEach(id=>document.getElementById(id).value='');
+  switchTab('stock');
+  toast('✅ '+name+' added!','green');
+}
+
+// ══════════════════════════
+// HISTORY
+// ══════════════════════════
+function clearHistory(){
+  if(!confirm('Sari history delete karein?')) return;
+  history=[];
+  saveData();
+  renderHistory();
+  toast('History cleared','green');
+}
+
+// ══════════════════════════
+// TABS
+// ══════════════════════════
+function switchTab(tab){
+  ['stock','add','history'].forEach(t=>{
+    document.getElementById('sec-'+t).style.display = t===tab?'block':'none';
+    document.getElementById('tab-'+t).classList.toggle('on', t===tab);
+  });
+}
+
+// ══════════════════════════
+// TOAST
+// ══════════════════════════
+function toast(msg,type){
+  const el=document.createElement('div');
+  el.className='toast '+(type||'');
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2500);
+}
+</script>
+</body>
+</html>
